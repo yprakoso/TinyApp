@@ -1,6 +1,9 @@
 <h1>TinyApp</h1>
-
+User : <%= currentUser %>
 <form action="/login" method="POST">
   <input id="username" name="username" type="text">
   <input type="submit" value="Login">
-<form>
+</form>
+<form action="/logout" method="POST">
+  <input type="submit" value="Logout">
+</form>

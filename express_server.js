@@ -13,11 +13,6 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-let templateVars = {
-  username: req.cookies["username"],
-  // ... any other vars
-};
-res.render("urls_index", templateVars);
 
 app.get("/", (req, res) => {
   res.end("Hello!");
@@ -37,6 +32,7 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
+  templateVars.currentUser = req.cookies["username"];
   res.render("urls_index", templateVars);
 });
 
@@ -74,9 +70,12 @@ app.post('/urls/:id', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  let templateVars =  {
-    username: res.cookie("username", req.body.username);
-  };
+  res.cookie("username", req.body.username);
+  res.redirect('/');
+});
+
+app.post('/logout', (req, res) => {
+  res.clearCookie("username");
   res.redirect('/');
 });
 
