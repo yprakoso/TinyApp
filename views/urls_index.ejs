@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>TinyApp</title>
+  <link rel="stylesheet" type="text/css" href="/styles/urls_index.css">
+</head>
+<body>
+    <% include ./partials/_header.ejs %>
+    <ul>
+      <% var urlList = Object.keys(urls);%>
+      <% for (var i = 0; i < urlList.length; i++) {%>
+        <li><%=urlList[i]%> : <%=urls[urlList[i]]%>
+          <form method="POST" action="/urls/<%=urlList[i]%>/delete">
+          <a href="urls/<%=urlList[i]%>">Edit</a>
+          </form>
+          <form method="POST" action="/urls/<%=urlList[i]%>/delete">
+            <input type="submit" value="Delete">
+          </form>
+        </li>
+      <%}%>
+      <button><a href="/urls">Generate</button>
+    </ul>
+</body>
+</html>
