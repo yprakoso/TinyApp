@@ -5,11 +5,19 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use("/styles", express.static(__dirname + "/styles"));
+const cookieParser = require('cookie-parser');
+app.use(cookieParser())
 
 var urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+let templateVars = {
+  username: req.cookies["username"],
+  // ... any other vars
+};
+res.render("urls_index", templateVars);
 
 app.get("/", (req, res) => {
   res.end("Hello!");
@@ -63,6 +71,13 @@ app.post('/urls/:id/delete', (req, res) => {
 app.post('/urls/:id', (req, res) => {
   urlDatabase[req.params.id] = req.body.longURL;
   res.redirect("/urls");
+});
+
+app.post('/login', (req, res) => {
+  let templateVars =  {
+    username: res.cookie("username", req.body.username);
+  };
+  res.redirect('/');
 });
 
 function generateRandomString() {
