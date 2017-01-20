@@ -2,16 +2,30 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 8080; // default port 8080
 const bodyParser = require("body-parser");
+const bcrypt = require('bcrypt');
+const cookie-session = require('cookie-session');
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use("/styles", express.static(__dirname + "/styles"));
 const cookieParser = require('cookie-parser');
-app.use(cookieParser())
+app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'],
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
 
 var urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+var urlDatabaseOwnership = {};
+  // {"username": [
+  //   "b2xVn2" : 'url',
+  //   "asdfasdf": 'url2'
+  // ]}
 
 var users = {};
 
@@ -80,8 +94,10 @@ app.post('/register', (req, res) => {
   let emailFound = false;
   if (users === undefined) {
     let userRandomId = generateRandomString();
-    users[userRandomId] = {id: userRandomId, email: req.body.email, password: req.body.password};
-    res.cookie("username", userRandomId);
+    const hashed_password = bcrypt.hashSync(req.body.password, 10);
+    users[userRandomId] = {id: userRandomId, email: req.body.email, password: hashed_password};
+    //res.cookie("username", userRandomId);
+
     res.redirect('/');
   } else {
     for (u in users) {
@@ -95,8 +111,9 @@ app.post('/register', (req, res) => {
     }
     if (emailFound === false) {
       let userRandomId = generateRandomString();
-      users[userRandomId] = {id: userRandomId, email: req.body.email, password: req.body.password};
-      res.cookie("username", userRandomId);
+      let hashed_password = bcrypt.hashSync(req.body.password, 10);
+      users[userRandomId] = {id: userRandomId, email: req.body.email, password: hashed_password};
+      //res.cookie("username", userRandomId);
       res.redirect('/');
     }
   }
@@ -117,19 +134,20 @@ app.post('/login', (req, res) => {
   if (userFound) {
     passwordMatch = false;
     for (user in users) {
-      if (req.body.password === users[user].password) {
+      if (bcrypt.compareSync(req.body.password, users[user].password)) {
         passwordMatch = true;
+        //res.cookie("username", users[user].id);
       }
     }
   }
   if (userFound && passwordMatch) {
-    res.cookie("username", req.body.username);
+    //res.cookie("username", user);
     res.redirect('/');
-  } else {res.status(403).send("Username and password Doesn't match");}
+  } else { res.status(403).send("Username and password Doesn't match"); }
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie("username");
+  //res.clearCookie("username");
   res.redirect('/');
 });
 

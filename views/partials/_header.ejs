@@ -1,8 +1,7 @@
 <h1>TinyApp</h1>
 User : <%= currentUser %>
 <%if (currentUser === "Not Logged In") {%>
-  <form action="/login" method="POST">
-    <input id="username" name="username" type="text">
+  <form action="/login" method="GET">
     <input type="submit" value="Login">
   </form>
 <%}%>
