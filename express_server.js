@@ -13,6 +13,7 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+var users = {};
 
 app.get("/", (req, res) => {
   res.end("Hello!");
@@ -32,7 +33,9 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
-  templateVars.currentUser = req.cookies["username"];
+  if (users.hasOwnProperty(req.cookies["username"])) {
+    templateVars.currentUser = users[req.cookies["username"]].email;
+  } else templateVars.currentUser = "Not Logged In";
   res.render("urls_index", templateVars);
 });
 
@@ -69,9 +72,60 @@ app.post('/urls/:id', (req, res) => {
   res.redirect("/urls");
 });
 
+app.get('/register', (req, res) => {
+  res.render("register");
+});
+
+app.post('/register', (req, res) => {
+  let emailFound = false;
+  if (users === undefined) {
+    let userRandomId = generateRandomString();
+    users[userRandomId] = {id: userRandomId, email: req.body.email, password: req.body.password};
+    res.cookie("username", userRandomId);
+    res.redirect('/');
+  } else {
+    for (u in users) {
+      emailFound = false;
+      if (req.body.email === users[u].email) {
+        emailFound = true;
+        console.log("same email found");//response code 400
+        res.status(400);
+        res.send("User already exist!");
+      }
+    }
+    if (emailFound === false) {
+      let userRandomId = generateRandomString();
+      users[userRandomId] = {id: userRandomId, email: req.body.email, password: req.body.password};
+      res.cookie("username", userRandomId);
+      res.redirect('/');
+    }
+  }
+});
+
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
 app.post('/login', (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect('/');
+  let userFound = false;
+  let passwordMatch = false;
+  for (user in users) {
+    if (req.body.email === users[user].email) {
+      userFound = true;
+    }
+  }
+  if (userFound) {
+    passwordMatch = false;
+    for (user in users) {
+      if (req.body.password === users[user].password) {
+        passwordMatch = true;
+      }
+    }
+  }
+  if (userFound && passwordMatch) {
+    res.cookie("username", req.body.username);
+    res.redirect('/');
+  } else {res.status(403).send("Username and password Doesn't match");}
 });
 
 app.post('/logout', (req, res) => {
