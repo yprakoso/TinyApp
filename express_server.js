@@ -3,12 +3,12 @@ const app = express();
 const PORT = process.env.PORT || 8080; // default port 8080
 const bodyParser = require("body-parser");
 const bcrypt = require('bcrypt');
-const cookie-session = require('cookie-session');
+const cookieSession = require('cookie-session');
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use("/styles", express.static(__dirname + "/styles"));
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
+//const cookieParser = require('cookie-parser');
+//app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2'],
@@ -28,9 +28,10 @@ var urlDatabaseOwnership = {};
   // ]}
 
 var users = {};
+var templateVars = {};
 
 app.get("/", (req, res) => {
-  res.end("Hello!");
+  res.end("Hello! Welcome to Tiny App!");
 });
 
 app.listen(PORT, () => {
@@ -46,10 +47,9 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
-  if (users.hasOwnProperty(req.cookies["username"])) {
-    templateVars.currentUser = users[req.cookies["username"]].email;
-  } else templateVars.currentUser = "Not Logged In";
+  templateVars = { urls: urlDatabase };
+  defineCurrentUser(req);
+  console.log(templateVars);
   res.render("urls_index", templateVars);
 });
 
@@ -58,7 +58,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  let templateVars = { shortURL: req.params.id, fullURL: urlDatabase[req.params.id] };
+  templateVars = { shortURL: req.params.id, fullURL: urlDatabase[req.params.id], currentUser: defineCurrentUser(req) };
   res.render("urls_show", templateVars);
 });
 
@@ -71,14 +71,18 @@ app.post("/urls", (req, res) => {
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  let longURL = urlDatabase[req.params.shortURL];
+  if (req.session.username) {
+    let longURL = urlDatabase[req.params.shortURL];
+  } else { res.status(403).send("You must login first!"); }
   res.redirect(longURL);
 });
 
 app.post('/urls/:id/delete', (req, res) => {
   let linkToDelete = req.params.id;
-  delete urlDatabase[linkToDelete];
-  res.redirect("/urls");
+  if (users[req.session.username]) {
+    delete urlDatabase[linkToDelete];
+    res.redirect("/urls");
+  } else { res.status(403).send("You must login first!"); }
 });
 
 app.post('/urls/:id', (req, res) => {
@@ -96,7 +100,7 @@ app.post('/register', (req, res) => {
     let userRandomId = generateRandomString();
     const hashed_password = bcrypt.hashSync(req.body.password, 10);
     users[userRandomId] = {id: userRandomId, email: req.body.email, password: hashed_password};
-    //res.cookie("username", userRandomId);
+    req.session.username = users[userRandomId].id;
 
     res.redirect('/');
   } else {
@@ -113,7 +117,7 @@ app.post('/register', (req, res) => {
       let userRandomId = generateRandomString();
       let hashed_password = bcrypt.hashSync(req.body.password, 10);
       users[userRandomId] = {id: userRandomId, email: req.body.email, password: hashed_password};
-      //res.cookie("username", userRandomId);
+      req.session.username = users[userRandomId].id;
       res.redirect('/');
     }
   }
@@ -136,18 +140,17 @@ app.post('/login', (req, res) => {
     for (user in users) {
       if (bcrypt.compareSync(req.body.password, users[user].password)) {
         passwordMatch = true;
-        //res.cookie("username", users[user].id);
+        req.session.username = users[user].id;
       }
     }
   }
   if (userFound && passwordMatch) {
-    //res.cookie("username", user);
     res.redirect('/');
   } else { res.status(403).send("Username and password Doesn't match"); }
 });
 
 app.post('/logout', (req, res) => {
-  //res.clearCookie("username");
+  req.session = null;
   res.redirect('/');
 });
 
@@ -158,4 +161,11 @@ function generateRandomString() {
     randomString += possibilities[Math.floor(Math.random() * possibilities.length)];
   }
   return randomString;
+}
+
+function defineCurrentUser(req) {
+  if (users.hasOwnProperty(req.session.username)) {
+    templateVars.currentUser = users[req.session.username].email;
+    return templateVars.currentUser;
+  } else return templateVars.currentUser = "Not Logged In";
 }
