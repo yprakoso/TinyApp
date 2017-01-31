@@ -7,18 +7,22 @@
 <body>
     <% include ./partials/_header.ejs %>
     <ul>
-      <% var urlList = Object.keys(urls);%>
-      <% for (var i = 0; i < urlList.length; i++) {%>
-        <li><%=urlList[i]%> : <%=urls[urlList[i]]%>
-          <form method="POST" action="/urls/<%=urlList[i]%>/delete">
-          <a href="urls/<%=urlList[i]%>">Edit</a>
+      <% var uname = username;%>
+      <% var urlList = urls[username].urls;%>
+      <% for (let data in urlList) {%>
+        <li><a href="/u/<%=data%>"><%=data%></a>: <%=urlList[data]%>
+          <form method="GET" action="/urls/<%=data%>">
+            <input type="submit" value="Update">
           </form>
-          <form method="POST" action="/urls/<%=urlList[i]%>/delete">
+          <form method="POST" action="/urls/<%=data%>/delete">
             <input type="submit" value="Delete">
           </form>
         </li>
       <%}%>
-      <button><a href="/urls">Generate</button>
+      <form method="GET" action="/urls/new">
+        <input type="submit" value="Generate New Link">
+      </form>
+
     </ul>
 </body>
 </html>
